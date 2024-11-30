@@ -1,28 +1,53 @@
-import time
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
 
+np.random.seed(0)
+n_feature = 2
 
-data_x = [(5.8, 2.7), (6.7, 3.1), (5.7, 2.9), (5.5, 2.4), (4.8, 3.4), (5.4, 3.4), (4.8, 3.0), (5.5, 2.5), (5.3, 3.7), (7.0, 3.2), (5.6, 2.9), (4.9, 3.1), (4.8, 3.0), (5.0, 2.3), (5.2, 3.4), (5.1, 3.8), (5.0, 3.0), (5.0, 3.3), (4.6, 3.1), (5.5, 2.6), (5.0, 3.5), (6.7, 3.0), (6.0, 2.2), (4.8, 3.1), (6.4, 2.9), (5.6, 3.0), (4.4, 3.0), (4.9, 2.4), (5.6, 3.0), (5.0, 3.6), (5.1, 3.3), (5.8, 4.0), (5.5, 2.4), (5.2, 2.7), (5.1, 3.8), (5.1, 3.5), (5.5, 4.2), (4.9, 3.1), (5.9, 3.2), (5.7, 2.6), (4.7, 3.2), (5.4, 3.9), (5.8, 2.6), (5.1, 3.4), (6.4, 3.2), (5.8, 2.7), (5.6, 2.7), (5.7, 2.8), (5.4, 3.0), (5.0, 3.2), (4.6, 3.4), (6.0, 2.7), (6.6, 3.0), (4.9, 3.0), (4.9, 3.6), (4.4, 3.2), (5.4, 3.4), (6.0, 3.4), (5.9, 3.0), (6.1, 2.8), (5.1, 3.7), (5.5, 3.5), (6.1, 3.0), (6.2, 2.2), (5.7, 3.0), (5.2, 3.5), (5.4, 3.7), (4.6, 3.2), (5.2, 4.1), (5.0, 2.0), (6.8, 2.8), (5.0, 3.5), (6.7, 3.1), (6.3, 3.3), (6.0, 2.9), (4.7, 3.2), (6.6, 2.9), (5.6, 2.5), (4.4, 2.9), (6.2, 2.9), (6.1, 2.9), (4.3, 3.0), (6.9, 3.1), (5.7, 3.8), (5.4, 3.9), (6.1, 2.8), (4.6, 3.6), (5.5, 2.3), (4.8, 3.4), (6.5, 2.8), (6.3, 2.5), (5.1, 3.8), (5.7, 4.4), (5.0, 3.4), (4.5, 2.3), (5.7, 2.8), (5.1, 2.5), (5.1, 3.5), (6.3, 2.3), (5.0, 3.4)]
-data_y = [1, 1, 1, 1, -1, -1, -1, 1, -1, 1, 1, -1, -1, 1, -1, -1, -1, -1, -1, 1, -1, 1, 1, -1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, -1, 1, 1, -1, -1, 1, -1, 1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, 1, 1, -1, 1, 1, -1, 1, -1, -1, 1, -1, 1, -1, 1, 1, -1, -1, -1, -1, 1, 1, -1, 1, -1]
+# исходные параметры для формирования образов обучающей выборки
+r1 = 0.7
+D1 = 3.0
+mean1 = [3, 7]
+V1 = [[D1 * r1 ** abs(i - j) for j in range(n_feature)] for i in range(n_feature)]
 
-x_train = np.array(data_x)
-y_train = np.array(data_y)
+r2 = 0.5
+D2 = 2.0
+mean2 = [4, 2]
+V2 = [[D2 * r2 ** abs(i - j) for j in range(n_feature)] for i in range(n_feature)]
 
+# моделирование обучающей выборки
+N1, N2 = 1000, 1200
+x1 = np.random.multivariate_normal(mean1, V1, N1).T
+x2 = np.random.multivariate_normal(mean2, V2, N2).T
 
-def gini(x):
-    return 1. - sum((np.sum(x == i) / len(x))**2 for i in (-1, 1))
+data_x = np.hstack([x1, x2]).T
+data_y = np.hstack([np.ones(N1) * -1, np.ones(N2)])
 
+x_train, x_test, y_train, y_test = train_test_split(data_x, data_y, random_state=123, test_size=0.3, shuffle=True)
 
-IG = fj = th = 0
-S0 = gini(y_train)
+max_depth = 3
+b_t = DecisionTreeClassifier(criterion='gini', max_depth=max_depth)
 
-for j in range(2):
-    for t in np.arange(min(x_train[:, j])+0.1, max(x_train[:, j])-0.1, 0.1):
-        indxs = x_train[:, j] <= t
-        S1 = gini(y_train[indxs])
-        S2 = gini(y_train[~indxs])
-        IG_ = S0 - (np.sum(indxs) * S1 + np.sum(~indxs) * S2) / len(y_train)
+w = np.ones(len(x_train)) / len(x_train)
+algs = []  # список из полученных алгоритмов
+alfa = []  # список из вычисленных весов для композиции
+T = 10
 
-        if IG_ > IG:
-            IG = IG_
-            fj = j
-            th = t
+for t in range(T):
+    algs.append(DecisionTreeClassifier(criterion='gini', max_depth=max_depth))
+    algs[t].fit(x_train, y_train, sample_weight=w)
+    predicted = algs[t].predict(x_train)
+    N = np.sum((y_train != predicted) * w) + 1e-8
+    alfa.append(0.5 * np.log((1 - N) / N))
+    w *= np.exp(-alfa[t] * y_train * predicted)
+    w /= w.sum()
+
+predict = alfa[0] * algs[0].predict(x_test)
+for n in range(1, T):
+    predict += alfa[n] * algs[n].predict(x_test)
+
+predict = np.sign(predict)
+Q = np.sum(predict != y_test)
+
+print(Q)
